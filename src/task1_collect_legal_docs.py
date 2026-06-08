@@ -1,47 +1,52 @@
+﻿"""Task 1 - Collect legal documents for the individual RAG pipeline.
+
+The actual PDF files are stored in data/landing/legal.  This module keeps the
+collection step reproducible by exposing helpers to create the directory,
+inspect collected files, and validate that the minimum corpus is present.
 """
-Task 1 — Thu thập văn bản pháp luật về ma tuý và các chất cấm.
 
-Hướng dẫn:
-    1. Tìm tối thiểu 3 văn bản pháp luật (PDF/DOCX) từ các nguồn chính thống.
-    2. Tải về và lưu vào data/landing/legal/
-    3. Đặt tên file rõ ràng, không dấu, có năm ban hành.
-
-Gợi ý nguồn:
-    - https://thuvienphapluat.vn
-    - https://vanban.chinhphu.vn
-    - https://luatvietnam.vn
-
-Gợi ý văn bản:
-    - Luật Phòng, chống ma tuý 2021 (73/2021/QH15)
-    - Nghị định 105/2021/NĐ-CP
-    - Bộ luật Hình sự 2015 (sửa đổi 2017) - Chương XX
-    - Nghị định 57/2022/NĐ-CP về danh mục chất ma tuý
-"""
+from __future__ import annotations
 
 from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "landing" / "legal"
+VALID_EXTENSIONS = {".pdf", ".docx", ".doc"}
+MIN_LEGAL_FILES = 3
 
 
-def setup_directory():
-    """Tạo thư mục data/landing/legal/ nếu chưa có."""
+def setup_directory() -> Path:
+    """Create data/landing/legal and return its path."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"✓ Thư mục đã sẵn sàng: {DATA_DIR}")
+    return DATA_DIR
 
 
-# TODO: Tải file PDF/DOCX về DATA_DIR
-# Có thể tải thủ công hoặc viết script download nếu có direct link.
-#
-# Ví dụ nếu có direct link:
-#
-# import requests
-#
-# def download_file(url: str, filename: str):
-#     response = requests.get(url)
-#     filepath = DATA_DIR / filename
-#     filepath.write_bytes(response.content)
-#     print(f"✓ Đã tải: {filepath}")
+def list_legal_documents() -> list[Path]:
+    """Return collected legal source files sorted by name."""
+    setup_directory()
+    return sorted(
+        path for path in DATA_DIR.iterdir()
+        if path.is_file() and path.suffix.lower() in VALID_EXTENSIONS
+    )
+
+
+def validate_collection(min_files: int = MIN_LEGAL_FILES) -> dict:
+    """Validate the local legal corpus used by the tests and demo."""
+    files = list_legal_documents()
+    non_empty = [path for path in files if path.stat().st_size > 1024]
+    return {
+        "directory": str(DATA_DIR),
+        "file_count": len(files),
+        "non_empty_count": len(non_empty),
+        "ok": len(files) >= min_files and len(non_empty) >= min_files,
+        "files": [path.name for path in files],
+    }
 
 
 if __name__ == "__main__":
-    setup_directory()
+    report = validate_collection()
+    print(f"Legal data directory: {report['directory']}")
+    print(f"Files: {report['file_count']} collected, {report['non_empty_count']} non-empty")
+    for name in report["files"]:
+        print(f"- {name}")
+    if not report["ok"]:
+        raise SystemExit("Need at least 3 non-empty legal PDF/DOC/DOCX files.")
