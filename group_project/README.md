@@ -59,12 +59,12 @@ Ask:
 
 | Thành viên | MSSV | Nhiệm vụ | Trạng thái |
 | --- | --- | --- | --- |
-| Kiều Đức Long | 2A202600939 | UI implementation, UX polishing, team lead, final integration | Done |
-| Nguyễn Duy Hưng | 2A202600578 | Markdown conversion + chunking | Done |
-| Vương Sỹ Hạnh | 2A202600722 | Semantic search + BM25 lexical retrieval | Done |
-| Đỗ Trung Kiên | 2A202600751 | Reranking + hybrid RRF pipeline | Done |
-| Nguyễn Minh Khoa | 2A202600974 | Evaluation pipeline + report + demo script | Done |
-| Nguyễn Hữu Đức | 2A202600683 | Data collection + news/legal corpus | Done |
+| Nguyễn Hữu Đức | 2A202600683 | Task 1 — thu thập văn bản pháp luật (`src/task1_collect_legal_docs.py`, `data/landing/legal/`); Task 2 — crawl bài báo (`src/task2_crawl_news.py`, `data/landing/news/`) | Done |
+| Nguyễn Duy Hưng | 2A202600578 | Task 3 — convert PDF/DOCX sang Markdown (`src/task3_convert_markdown.py`, `data/standardized/`); Task 4 — chunking + indexing (`src/task4_chunking_indexing.py`) | Done |
+| Vương Sỹ Hạnh | 2A202600722 | Task 5 — semantic dense retrieval (`src/task5_semantic_search.py`); Task 6 — BM25 lexical retrieval (`src/task6_lexical_search.py`); tích hợp RAG pipeline + viết test (`tests/test_individual.py`) | Done |
+| Đỗ Trung Kiên | 2A202600751 | Task 7 — reranking module (`src/task7_reranking.py`); Task 9 — hybrid retrieval pipeline với RRF (`src/task9_retrieval_pipeline.py`) | Done |
+| Nguyễn Minh Khoa | 2A202600974 | Evaluation pipeline cho bài nhóm — golden dataset, metrics, A/B comparison, results report (`group_project/evaluation/`) | Done |
+| Kiều Đức Long | 2A202600939 | Team lead + final integration: Streamlit UI (`app.py`), Task 8 PageIndex vectorless fallback (`src/task8_pageindex_vectorless.py`), Task 10 generation có citation (`src/task10_generation.py`), tài liệu dự án (`README.md`, `plan.md`, `steps.md`) | Done |
 
 
 ## API notes
