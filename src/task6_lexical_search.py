@@ -1,83 +1,99 @@
-"""
-Task 6 — Lexical Search Module (BM25).
+﻿"""Task 6 - lexical search using BM25 plus metadata-aware local ranking."""
 
-Mặc định sử dụng BM25. Nếu dùng phương pháp khác (TF-IDF, Elasticsearch,
-Weaviate BM25 built-in), hãy giải thích cơ chế trong buổi demo → +5 bonus.
+from __future__ import annotations
 
-Cài đặt:
-    pip install rank-bm25
+import re
+import unicodedata
+from .task4_chunking_indexing import get_chunks
 
-BM25 hoạt động thế nào:
-    - Term Frequency (TF): từ xuất hiện nhiều trong document → điểm cao
-    - Inverse Document Frequency (IDF): từ hiếm → quan trọng hơn
-    - Document length normalization: document dài không bị ưu tiên quá mức
-    - Formula: score(q,d) = Σ IDF(qi) * (tf(qi,d) * (k1+1)) / (tf(qi,d) + k1*(1-b+b*|d|/avgdl))
-    - k1=1.5 (term saturation), b=0.75 (length normalization)
-"""
+STOPWORDS = {
+    "la", "cua", "va", "ve", "voi", "the", "nao", "duoc", "noi", "o", "nguon",
+    "lien", "quan", "bi", "xu", "ly", "ra", "sao", "gi", "tu", "theo", "luat",
+    "moi", "nhat", "trong", "cac", "nhung", "cho", "mot", "co", "phai", "chat",
+}
 
-from pathlib import Path
 
-# TODO: Load corpus từ data/standardized/ hoặc từ vector store
-CORPUS: list[dict] = []  # List of {'content': str, 'metadata': dict}
+def _fix_mojibake(text: str) -> str:
+    # Repair common UTF-8-as-cp1252 mojibake without touching normal Vietnamese text.
+    if "Ã" in text or "Â" in text:
+        try:
+            return text.encode("cp1252", errors="ignore").decode("utf-8", errors="ignore")
+        except Exception:
+            return text
+    return text
+
+
+def _strip_accents(text: str) -> str:
+    text = unicodedata.normalize("NFD", text)
+    return "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
+
+
+def _tokens(text: str) -> list[str]:
+    text = _strip_accents(_fix_mojibake(text).lower())
+    return re.findall(r"[a-z0-9]+", text)
+
+
+def _signal_tokens(text: str) -> list[str]:
+    return [tok for tok in _tokens(text) if tok not in STOPWORDS and (len(tok) > 2 or any(ch.isdigit() for ch in tok))]
 
 
 def build_bm25_index(corpus: list[dict]):
-    """
-    Xây dựng BM25 index từ corpus.
+    from rank_bm25 import BM25Okapi
+    return BM25Okapi([_signal_tokens(doc["content"]) for doc in corpus])
 
-    Args:
-        corpus: List of {'content': str, 'metadata': dict}
-    """
-    # TODO: Implement BM25 index
-    #
-    # from rank_bm25 import BM25Okapi
-    #
-    # # Tokenize - cho tiếng Việt nên dùng underthesea hoặc đơn giản split()
-    # tokenized_corpus = [doc["content"].lower().split() for doc in corpus]
-    # bm25 = BM25Okapi(tokenized_corpus)
-    # return bm25
-    raise NotImplementedError("Implement build_bm25_index")
+
+def _metadata_text(doc: dict) -> str:
+    md = doc.get("metadata", {})
+    return " ".join(str(md.get(k, "")) for k in ["title", "source", "type", "path"])
 
 
 def lexical_search(query: str, top_k: int = 10) -> list[dict]:
-    """
-    Tìm kiếm từ khóa sử dụng BM25.
+    corpus = get_chunks()
+    if not corpus:
+        return []
 
-    Args:
-        query: Câu truy vấn
-        top_k: Số lượng kết quả tối đa
+    q_tokens = _signal_tokens(query)
+    q_set = set(q_tokens)
+    q_numbers = {tok for tok in q_tokens if any(ch.isdigit() for ch in tok)}
+    if not q_tokens:
+        return []
 
-    Returns:
-        List of {
-            'content': str,
-            'score': float,      # BM25 score
-            'metadata': dict
-        }
-        Sorted by score descending.
-    """
-    # TODO: Implement lexical search
-    #
-    # tokenized_query = query.lower().split()
-    # scores = bm25.get_scores(tokenized_query)
-    #
-    # # Get top_k indices
-    # import numpy as np
-    # top_indices = np.argsort(scores)[::-1][:top_k]
-    #
-    # results = []
-    # for idx in top_indices:
-    #     if scores[idx] > 0:
-    #         results.append({
-    #             "content": CORPUS[idx]["content"],
-    #             "score": float(scores[idx]),
-    #             "metadata": CORPUS[idx]["metadata"]
-    #         })
-    # return results
-    raise NotImplementedError("Implement lexical_search")
+    doc_tokens = [_signal_tokens(doc["content"]) for doc in corpus]
+    meta_tokens = [_signal_tokens(_metadata_text(doc)) for doc in corpus]
+    overlap_scores = []
+    for body, meta in zip(doc_tokens, meta_tokens):
+        body_set = set(body)
+        meta_set = set(meta)
+        body_overlap = len(q_set & body_set)
+        meta_overlap = len(q_set & meta_set)
+        number_boost = 3 * len(q_numbers & (body_set | meta_set))
+        phrase_boost = 1.5 if _strip_accents(query.lower())[:24] in _strip_accents((" ".join(meta)).lower()) else 0
+        overlap_scores.append(body_overlap + 2.2 * meta_overlap + number_boost + phrase_boost)
+
+    try:
+        bm25 = build_bm25_index(corpus)
+        raw_scores = [float(s) for s in bm25.get_scores(q_tokens)]
+        min_score = min(raw_scores) if raw_scores else 0.0
+        scores = [(score - min_score) + overlap for score, overlap in zip(raw_scores, overlap_scores)]
+    except Exception:
+        scores = overlap_scores
+
+    ranked = sorted(enumerate(scores), key=lambda x: float(x[1]), reverse=True)
+    results = []
+    seen_sources: set[str] = set()
+    for idx, score in ranked:
+        if len(results) >= top_k:
+            break
+        if float(score) <= 0:
+            continue
+        metadata = corpus[idx].get("metadata", {})
+        source_key = str(metadata.get("source", idx))
+        if source_key in seen_sources:
+            continue
+        seen_sources.add(source_key)
+        results.append({"content": corpus[idx]["content"], "score": float(score), "metadata": metadata})
+    return results
 
 
 if __name__ == "__main__":
-    # Test
-    results = lexical_search("Điều 248 tàng trữ trái phép chất ma tuý", top_k=5)
-    for r in results:
-        print(f"[{r['score']:.3f}] {r['content'][:100]}...")
+    print(lexical_search("ma túy", 3))
