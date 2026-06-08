@@ -1,0 +1,29 @@
+{
+  "description": "Official legal documents collected for Day 8 RAG lab - Task 1.",
+  "documents": [
+    {
+      "title": "Luat Phong, chong ma tuy",
+      "document_number": "73/2021/QH14",
+      "issued_date": "2021-03-30",
+      "source_page": "https://congbao.chinhphu.vn/van-ban/nghi-quyet-so-73-2021-qh14-33659.htm",
+      "download_url": "https://congbao.chinhphu.vn/tai-ve-van-ban-so-73-2021-qh14-33659-35651?format=pdf",
+      "filename": "luat-phong-chong-ma-tuy-2021.pdf"
+    },
+    {
+      "title": "Nghi dinh huong dan Luat Phong, chong ma tuy",
+      "document_number": "105/2021/ND-CP",
+      "issued_date": "2021-12-04",
+      "source_page": "https://congbao.chinhphu.vn/van-ban/nghi-dinh-so-105-2021-nd-cp-34944.htm",
+      "download_url": "https://congbao.chinhphu.vn/tai-ve-van-ban-so-105-2021-nd-cp-34944-37821?format=pdf",
+      "filename": "nghi-dinh-105-2021.pdf"
+    },
+    {
+      "title": "Nghi dinh quy dinh cac danh muc chat ma tuy va tien chat",
+      "document_number": "57/2022/ND-CP",
+      "issued_date": "2022-08-25",
+      "source_page": "https://congbao.chinhphu.vn/van-ban/nghi-dinh-so-57-2022-nd-cp-37734.htm",
+      "download_url": "https://congbao.chinhphu.vn/tai-ve-van-ban-so-57-2022-nd-cp-37734-41623?format=pdf",
+      "filename": "nghi-dinh-57-2022.pdf"
+    }
+  ]
+}

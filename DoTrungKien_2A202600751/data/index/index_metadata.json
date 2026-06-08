@@ -1,0 +1,20 @@
+{
+  "vector_store": "local_json",
+  "chunks_path": "data/index/chunks.json",
+  "chunk_count": 954,
+  "chunking_method": "recursive_character",
+  "chunk_size": 500,
+  "chunk_overlap": 80,
+  "embedding_model": "local-hashing-bow",
+  "embedding_dim": 384,
+  "document_sources": [
+    "legal/luat-phong-chong-ma-tuy-2021.md",
+    "legal/nghi-dinh-105-2021.md",
+    "legal/nghi-dinh-57-2022.md",
+    "news/b-t-ca-s-chi-d-n-ng-i-m-u-an-t-y-c-ti-n-tr-c-ph-ng-v-t-ch-c-s-d-ng-ma-t-y-b-o-sa-i-go-n-gi.md",
+    "news/c-ng-an-tphcm-c-l-nh-b-t-c-ti-n-tr-c-ph-ng-ng-i-m-u-an-t-y.md",
+    "news/lo-t-ngh-s-vi-t-ti-u-tan-s-nghi-p-v-ma-t-y.md",
+    "news/ng-i-m-u-nhikolai-inh-b-b-t-trong-chuy-n-n-ma-t-y-khu-m-l-ng-qu-n-1.md",
+    "news/truy-t-ca-s-chi-d-n-ng-i-m-u-an-t-y.md"
+  ]
+}

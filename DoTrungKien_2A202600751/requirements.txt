@@ -1,0 +1,16 @@
+# Minimal dependencies for the implemented Task 1-10 pipeline
+python-dotenv>=1.0.0
+requests>=2.31.0
+pytest>=8.0.0
+markitdown[pdf]>=0.1.0
+rank-bm25>=0.2.2
+openai>=1.30.0
+pageindex>=0.1.0
+weaviate-client>=4.5.0
+
+# Optional, install only when you switch those features on:
+# crawl4ai>=0.3.0                 # richer article crawling
+# sentence-transformers>=2.2.0    # neural embeddings instead of local hashing
+# langchain-text-splitters>=0.2.0 # LangChain splitters instead of local chunker
+# streamlit>=1.35.0               # group chatbot UI
+# deepeval>=1.0.0                 # group evaluation pipeline
