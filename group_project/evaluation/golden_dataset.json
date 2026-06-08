@@ -1,17 +1,77 @@
 [
   {
-    "question": "Hình phạt cho tội tàng trữ trái phép chất ma tuý theo Điều 249 Bộ luật Hình sự?",
-    "expected_answer": "Phạt tù từ 1 đến 5 năm đối với trường hợp tàng trữ từ 1g đến dưới 5g heroin hoặc cocaine, hoặc chất ma tuý khác với khối lượng tương đương.",
-    "expected_context": "Bộ luật Hình sự 2015, Điều 249"
+    "question": "Ketamine có phải chất ma túy không?",
+    "expected_answer": "Cần đối chiếu Nghị định 57/2022 và danh mục chất ma túy; nếu context không nêu rõ thì phải nói không đủ bằng chứng.",
+    "expected_context": "nghi_dinh_57_2022.md"
   },
   {
-    "question": "Luật Phòng chống ma tuý 2021 quy định những hình thức cai nghiện nào?",
-    "expected_answer": "Cai nghiện tự nguyện tại gia đình, cai nghiện tự nguyện tại cộng đồng, cai nghiện tự nguyện tại cơ sở cai nghiện, và cai nghiện bắt buộc tại cơ sở cai nghiện.",
-    "expected_context": "Luật Phòng chống ma tuý 2021, Chương V"
+    "question": "Người sử dụng ma túy có bị xử lý hình sự không?",
+    "expected_answer": "Người sử dụng trái phép chất ma túy có thể bị xử lý hành chính, quản lý và cai nghiện; truy cứu hình sự phụ thuộc hành vi khác như tàng trữ, mua bán, vận chuyển.",
+    "expected_context": "luat_phong_chong_ma_tuy_2021.md"
   },
   {
-    "question": "Danh mục các chất ma tuý thuộc nhóm I theo quy định pháp luật Việt Nam gồm những chất nào?",
-    "expected_answer": "Nhóm I gồm các chất ma tuý tuyệt đối cấm sử dụng trong y học và đời sống, bao gồm heroin, cocaine, methamphetamine, MDMA (ecstasy), cannabis (cần sa), và các chất tương tự.",
-    "expected_context": "Nghị định 57/2022/NĐ-CP, Phụ lục I"
+    "question": "Vụ Công Trí liên quan điều luật nào?",
+    "expected_answer": "Cần truy xuất các bài báo về Công Trí/nghệ sĩ liên quan ma túy và đối chiếu với BLHS, Luật Phòng chống ma túy tùy hành vi được nguồn tin nêu.",
+    "expected_context": "article_017.md; article_019.md"
+  },
+  {
+    "question": "Chiêu thức giấu 91kg ma túy từ Campuchia liên quan hành vi gì?",
+    "expected_answer": "Bài báo nêu hành vi giấu 91kg ma túy trong máy lọc không khí, xe máy điện để đưa từ Campuchia về Việt Nam tiêu thụ; cần đối chiếu nhóm hành vi vận chuyển/mua bán trái phép chất ma túy.",
+    "expected_context": "article_003.md"
+  },
+  {
+    "question": "Đường dây vận chuyển 117kg ma túy của Tuấn cọp bị xử lý ra sao?",
+    "expected_answer": "Nguồn tin nêu nhóm bị xét xử về vận chuyển, tàng trữ, mua bán hơn 117kg ma túy; cần đối chiếu BLHS về các tội ma túy.",
+    "expected_context": "article_007.md; bo_luat_hinh_su_2015.md"
+  },
+  {
+    "question": "Tòa tuyên án tử hình 12 bị cáo trong vụ hơn 200kg ma túy vì hành vi gì?",
+    "expected_answer": "Bài báo nêu các bị cáo liên quan mua bán, vận chuyển hơn 200kg ma túy các loại như Methamphetamine, Ketamine, thuốc lắc.",
+    "expected_context": "article_005.md"
+  },
+  {
+    "question": "Thời hạn cai nghiện ma túy theo luật mới nhất được nói ở nguồn nào?",
+    "expected_answer": "Cần truy xuất bài VietnamNet về thời hạn cai nghiện và đối chiếu Luật Phòng chống ma túy/Nghị định 105/2021.",
+    "expected_context": "article_011.md; nghi_dinh_105_2021.md"
+  },
+  {
+    "question": "Các đề xuất sửa luật về quản lý ma túy trong bối cảnh mới nằm ở bài nào?",
+    "expected_answer": "Bài VietnamNet ngày 2025-06-25 nói về siết quản lý ma túy trong bối cảnh mới và các đề xuất sửa luật đáng chú ý.",
+    "expected_context": "article_012.md"
+  },
+  {
+    "question": "Bài nào nói về tác hại của ma túy mới và hỗ trợ cai nghiện?",
+    "expected_answer": "Bài VietnamNet ngày 2024-11-18 nói về tác hại của ma túy mới và các biện pháp hỗ trợ cai nghiện hiện có.",
+    "expected_context": "article_013.md"
+  },
+  {
+    "question": "Cai nghiện ma túy không dùng thuốc được đề cập ở nguồn nào?",
+    "expected_answer": "Bài VietnamNet ngày 2020-04-29 đề cập phương pháp cai nghiện ma túy không dùng thuốc.",
+    "expected_context": "article_014.md"
+  },
+  {
+    "question": "Năm 2025 lực lượng chức năng bắt giữ bao nhiêu vụ buôn bán ma túy trong 9 tháng?",
+    "expected_answer": "Nguồn Công an Nhân dân nêu 9 tháng năm 2025 bắt giữ hơn 19.000 vụ và 37.500 đối tượng phạm tội về ma túy.",
+    "expected_context": "article_008.md"
+  },
+  {
+    "question": "Năm 2025 đã triệt phá gần 22.000 vụ ma túy theo bài nào?",
+    "expected_answer": "Nguồn Công an Nhân dân ngày 2025-12-21 nêu đấu tranh, triệt phá gần 22.000 vụ, bắt hơn 44.000 đối tượng phạm tội về ma túy.",
+    "expected_context": "article_009.md"
+  },
+  {
+    "question": "Tin tức về nghệ sĩ liên quan ma túy cần đối chiếu gì?",
+    "expected_answer": "Cần truy xuất các bài về nghệ sĩ/người nổi tiếng và đối chiếu legal corpus; không suy diễn tội danh nếu bài báo không nêu hành vi cụ thể.",
+    "expected_context": "article_016.md; article_017.md; article_018.md; article_019.md; article_020.md"
+  },
+  {
+    "question": "Vận chuyển ma túy bị phạt bao nhiêu năm?",
+    "expected_answer": "Khung hình phạt phụ thuộc loại chất, khối lượng và tình tiết; cần đối chiếu Bộ luật Hình sự về tội vận chuyển trái phép chất ma túy.",
+    "expected_context": "bo_luat_hinh_su_2015.md"
+  },
+  {
+    "question": "Mua bán ma túy bị xử lý theo văn bản nào?",
+    "expected_answer": "Cần đối chiếu Bộ luật Hình sự 2015 về các tội phạm mua bán trái phép chất ma túy và các bài báo mua bán/vận chuyển ma túy.",
+    "expected_context": "bo_luat_hinh_su_2015.md; article_001.md; article_005.md"
   }
 ]
