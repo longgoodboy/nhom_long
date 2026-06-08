@@ -658,3 +658,108 @@ pytest tests/test_individual.py::TestTask5 -v
 - [Jina Reranker](https://jina.ai/reranker/) — Cross-encoder reranking API
 - Liu et al. (2023), *Lost in the Middle: How Language Models Use Long Contexts*
 # Day08_RAG_pipeline_cohort2
+
+---
+
+# Lab Completion Guide - Vietnam Drug Law RAG Assistant
+
+## Current implementation status
+
+This repo now includes an end-to-end RAG pipeline for the Vietnam Drug Law Assistant:
+
+- Data landing corpus: legal PDFs and 20 news JSON files.
+- Standardized markdown corpus under `data/standardized/legal` and `data/standardized/news`.
+- Task 4-10 implementations under `src/` with API-aware behavior and safe local fallback.
+- Streamlit chatbot UI in `app.py`.
+- Group evaluation artifacts under `group_project/evaluation/`.
+- Planning docs: `plan.md` and `steps.md`.
+
+## Environment setup
+
+Create `.env` from `.env.example` or use the existing `.env` file:
+
+```env
+OPENAI_API_KEY=your_openai_key
+OPENAI_MODEL=gpt-4o-mini
+JINA_API_KEY=your_jina_key
+PAGEINDEX_API_KEY=your_pageindex_key
+WEAVIATE_URL=optional_weaviate_url
+WEAVIATE_API_KEY=optional_weaviate_key
+```
+
+Notes:
+
+- If `OPENAI_API_KEY` is set, Task 10 uses OpenAI for final answers with citations.
+- If `JINA_API_KEY` is set, Task 7 uses Jina reranker; otherwise it uses local rerank fallback.
+- If `PAGEINDEX_API_KEY` is set and the SDK supports the available methods, Task 8 attempts PageIndex; otherwise it uses local PageIndex-shaped fallback.
+- Do not commit real API keys.
+
+## Run the lab
+
+From the repository root:
+
+```powershell
+cd D:\vin_lab\Day08_RAG_pipeline_cohort2
+pip install -r requirements.txt
+pytest tests/ -v
+python group_project\evaluation\eval_pipeline.py
+streamlit run app.py
+```
+
+Expected automated test status in the current local implementation:
+
+```text
+34 passed, 1 skipped
+```
+
+## Demo questions
+
+Use these in the Streamlit app:
+
+```text
+Ketamine co phai chat ma tuy khong?
+Nguoi su dung ma tuy co bi xu ly hinh su khong?
+Vu Cong Tri lien quan dieu luat nao?
+```
+
+Also test a follow-up flow:
+
+```text
+Vu Cong Tri thi sao?
+Hanh vi do bi xu ly the nao?
+```
+
+## Architecture
+
+```text
+Raw PDFs + news JSON
+  -> standardized markdown
+  -> chunking with metadata
+  -> semantic search + BM25 lexical search
+  -> RRF merge
+  -> Jina/API rerank when available, local rerank fallback otherwise
+  -> PageIndex fallback when hybrid score is weak
+  -> OpenAI generation when available, extractive citation fallback otherwise
+  -> Streamlit chat UI + source cards + evaluation dashboard
+```
+
+## Evaluation deliverables
+
+- `group_project/evaluation/golden_dataset.json`: 15 Q&A cases.
+- `group_project/evaluation/eval_pipeline.py`: offline-friendly A/B evaluator.
+- `group_project/evaluation/results.md`: generated metric table, worst performers, recommendations.
+
+Run:
+
+```powershell
+python group_project\evaluation\eval_pipeline.py
+```
+
+## Final submission checklist
+
+- [ ] `pytest tests/ -v` runs from repo root.
+- [ ] `streamlit run app.py` opens the chatbot.
+- [ ] The three required demo questions return answers with source cards.
+- [ ] Evaluation script generates `results.md`.
+- [ ] `.env` contains local keys only and is not committed with real secrets.
+- [ ] README, `plan.md`, and `steps.md` are included for reviewer clarity.
