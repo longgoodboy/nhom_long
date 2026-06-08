@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Hướng dẫn chi tiết bài tập Ngày 8 - Xây dựng RAG Pipeline v2 với Hybrid Search, Reranking, Vectorless Fallback và Citations">
+  <title>Ngày 8 — RAG Pipeline v2: Hướng Dẫn Chi Tiết</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #090d16;
+      --panel: #111827;
+      --panel-light: #1f2937;
+      --border: #1e293b;
+      --border-focus: #38bdf8;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent: #06b6d4;      /* Cyan */
+      --accent-grad: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+      --purple: #8b5cf6;      /* Violet */
+      --purple-grad: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --code-bg: #030712;
+    }
+
+    * {
+      box-sizing: border-box;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+        radial-gradient(at 50% 0%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
+      color: var(--text);
+      line-height: 1.7;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px 100px;
+    }
+
+    /* Hero Section */
+    header.hero {
+      text-align: center;
+      padding: 60px 20px 40px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    header.hero .badge {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(6, 182, 212, 0.12);
+      color: var(--accent);
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 20px;
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      text-transform: uppercase;
+    }
+
+    header.hero h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 800;
+      margin: 0 0 16px;
+      background: var(--accent-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    }
+
+    header.hero p.subtitle {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      max-width: 800px;
+      margin: 0 auto;
+      font-weight: 300;
+    }
+
+    /* Table of Contents */
+    .toc {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 30px;
+      margin-bottom: 40px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+    }
+
+    .toc h3 {
+      font-family: 'Outfit', sans-serif;
+      margin: 0 0 16px;
+      color: var(--accent);
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toc h3::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .toc ol {
+      margin: 0;
+      padding-left: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px 24px;
+    }
+
+    .toc a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      display: inline-block;
+    }
+
+    .toc a:hover {
+      color: var(--accent);
+      transform: translateX(4px);
+    }
+
+    /* Main Content Sections */
+    section.card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 36px 40px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      position: relative;
+      transition: border-color 0.3s ease;
+    }
+
+    section.card:hover {
+      border-color: rgba(6, 182, 212, 0.25);
+    }
+
+    section.card h2 {
+      font-family: 'Outfit', sans-serif;
+      margin-top: 0;
+      margin-bottom: 24px;
+      color: var(--text);
+      font-size: 1.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    section.card h2 .num {
+      display: inline-flex;
+      width: 40px;
+      height: 40px;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent-grad);
+      color: #000;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+    }
+
+    section.card h3 {
+      font-family: 'Outfit', sans-serif;
+      color: var(--accent);
+      margin-top: 32px;
+      margin-bottom: 12px;
+      font-size: 1.3rem;
+      border-bottom: 1px solid rgba(6, 182, 212, 0.15);
+      padding-bottom: 8px;
+    }
+
+    section.card h4 {
+      font-family: 'Outfit', sans-serif;
+      color: var(--text);
+      margin-top: 24px;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    /* Grids & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(45%, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(30%, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .mini-card {
+      background: rgba(31, 41, 55, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .mini-card:hover {
+      background: rgba(31, 41, 55, 0.7);
+      border-color: rgba(6, 182, 212, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .mini-card h4 {
+      margin: 0 0 8px 0;
+      color: var(--accent);
+      font-size: 1rem;
+    }
+
+    .mini-card p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Code Blocks */
+    code, pre {
+      font-family: 'Fira Code', 'SF Mono', Monaco, monospace;
+      font-size: 0.9rem;
+    }
+
+    code {
+      background: rgba(6, 182, 212, 0.1);
+      color: var(--accent);
+      padding: 3px 6px;
+      border-radius: 6px;
+      border: 1px solid rgba(6, 182, 212, 0.15);
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      overflow-x: auto;
+      line-height: 1.5;
+      margin: 16px 0;
+    }
+
+    pre code {
+      background: none;
+      color: #e5e7eb;
+      padding: 0;
+      border: none;
+      font-size: 0.88rem;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      background: var(--code-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    th, td {
+      padding: 14px 18px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: rgba(31, 41, 55, 0.9);
+      color: var(--accent);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+    }
+
+    td {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    tr:hover td {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Badges & Pills */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .pill-success { background: rgba(34, 197, 94, 0.12); color: var(--success); border: 1px solid rgba(34, 197, 94, 0.2); }
+    .pill-warning { background: rgba(234, 179, 8, 0.12); color: var(--warning); border: 1px solid rgba(234, 179, 8, 0.2); }
+    .pill-info { background: rgba(6, 182, 212, 0.12); color: var(--accent); border: 1px solid rgba(6, 182, 212, 0.2); }
+    .pill-purple { background: rgba(139, 92, 246, 0.12); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.2); }
+
+    /* Callouts */
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(6, 182, 212, 0.04);
+      padding: 16px 20px;
+      border-radius: 4px 12px 12px 4px;
+      margin: 24px 0;
+      border-top: 1px solid rgba(6, 182, 212, 0.05);
+      border-right: 1px solid rgba(6, 182, 212, 0.05);
+      border-bottom: 1px solid rgba(6, 182, 212, 0.05);
+    }
+
+    .callout.warning {
+      border-color: var(--warning);
+      background: rgba(234, 179, 8, 0.03);
+    }
+
+    .callout.danger {
+      border-color: var(--danger);
+      background: rgba(239, 68, 68, 0.03);
+    }
+
+    .callout h5 {
+      margin: 0 0 6px 0;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+    }
+    .callout.info h5 { color: var(--accent); }
+    .callout.warning h5 { color: var(--warning); }
+    .callout.danger h5 { color: var(--danger); }
+
+    .callout p {
+      margin: 0;
+      font-size: 0.92rem;
+      color: var(--text-muted);
+    }
+
+    /* Checklist */
+    ul.checklist {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0;
+    }
+
+    ul.checklist li {
+      padding: 8px 0 8px 32px;
+      position: relative;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    ul.checklist li::before {
+      content: "○";
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      color: var(--accent);
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    ul.checklist li.done::before {
+      content: "✓";
+      color: var(--success);
+    }
+
+    ul.checklist li.warning::before {
+      content: "⚠";
+      color: var(--warning);
+    }
+
+    /* Visual Flow Diagram */
+    .flow {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 24px 0;
+      justify-content: center;
+    }
+
+    .flow .step {
+      background: rgba(31, 41, 55, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      flex: 1;
+      min-width: 180px;
+      max-width: 240px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .flow .step .label {
+      color: var(--accent);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .flow .step .desc {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 6px;
+    }
+
+    .flow .arrow {
+      color: var(--accent);
+      font-size: 1.6rem;
+      font-weight: bold;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      margin-top: 60px;
+      font-size: 0.88rem;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .toc ol {
+        grid-template-columns: 1fr;
+      }
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+      header.hero h1 {
+        font-size: 2rem;
+      }
+      section.card {
+        padding: 24px;
+      }
+      .flow {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .flow .step {
+        max-width: none;
+      }
+      .flow .arrow {
+        transform: rotate(90deg);
+        align-self: center;
+        margin: 4px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header class="hero">
+    <span class="badge">Day 08 — Lab Explanation</span>
+    <h1>Xây Dựng RAG Pipeline v2</h1>
+    <p class="subtitle">Thiết lập hệ thống RAG kết hợp Hybrid Search, Reranking, Vectorless Fallback (PageIndex), và Generation có trích dẫn nguồn (Citation)</p>
+  </header>
+
+  <nav class="toc">
+    <h3>Mục Lục Hướng Dẫn</h3>
+    <ol>
+      <li><a href="#overview">1. Tổng Quan &amp; Chủ Đề Dữ Liệu</a></li>
+      <li><a href="#structure">2. Cấu Trúc Thư Mục Project</a></li>
+      <li><a href="#pipeline">3. Kiến Trúc Pipeline Hoàn Chỉnh</a></li>
+      <li><a href="#individual">4. Chi Tiết 10 Tasks Cá Nhân (50đ)</a></li>
+      <li><a href="#group">5. Yêu Cầu Bài Tập Nhóm (30đ)</a></li>
+      <li><a href="#grading">6. Phân Bổ Điểm &amp; Cách Test</a></li>
+      <li><a href="#timeline">7. Timeline Gợi Ý &amp; Tham Khảo</a></li>
+    </ol>
+  </nav>
+
+  <!-- Section 1 -->
+  <section class="card" id="overview">
+    <h2><span class="num">1</span> Tổng Quan &amp; Chủ Đề Dữ Liệu</h2>
+    <p>
+      Bài tập <strong>Ngày 8</strong> nâng cấp hệ thống RAG lên một cấp độ thực tế (v2). Bạn sẽ tích hợp một pipeline <strong>Hybrid Search</strong> (Dense Retrieval + Lexical BM25) phối hợp với <strong>Reranking</strong>, và thiết lập một cơ chế fallback đặc biệt gọi là <strong>Vectorless RAG (PageIndex)</strong> phòng trường hợp tìm kiếm Hybrid không tìm thấy thông tin phù hợp.
+    </p>
+
+    <div class="callout info">
+      <h5>Chủ đề Dữ liệu</h5>
+      <p>
+        Hệ thống được thiết kế để trả lời các câu hỏi dựa trên hai nhóm nguồn dữ liệu:<br>
+        1. <strong>Pháp luật Việt Nam về ma tuý và các chất cấm</strong> (tập trung vào cấu trúc luật, hình phạt, danh mục).<br>
+        2. <strong>Tin tức báo chí về các nghệ sĩ/người nổi tiếng</strong> liên quan tới ma tuý.
+      </p>
+    </div>
+
+    <div class="grid-2">
+      <div class="mini-card">
+        <h4>Hybrid Search</h4>
+        <p>Kết hợp giữa sức mạnh tìm hiểu ngữ nghĩa (Semantic - Vector) và sự chính xác theo từ khóa (Lexical - BM25) để tối đa hóa độ phủ (Recall).</p>
+      </div>
+      <div class="mini-card">
+        <h4>Vectorless Fallback</h4>
+        <p>Nếu kết quả tìm kiếm Hybrid không đạt điểm tin cậy, hệ thống sẽ tự động fallback sang PageIndex SDK để tìm kiếm văn bản không cần qua vector DB nội bộ.</p>
+      </div>
+      <div class="mini-card">
+        <h4>Context Reordering</h4>
+        <p>Sắp xếp lại thứ tự các chunk trước khi đưa vào LLM để ngăn chặn hiện tượng "Lost in the middle" (LLM bỏ qua thông tin nằm giữa prompt).</p>
+      </div>
+      <div class="mini-card">
+        <h4>Citation Generation</h4>
+        <p>Bắt buộc LLM trích dẫn cụ thể tên tài liệu nguồn và năm ban hành (ví dụ: [Luật Phòng chống ma tuý, 2021]) trong câu trả lời.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2 -->
+  <section class="card" id="structure">
+    <h2><span class="num">2</span> Cấu Trúc Thư Mục Project</h2>
+    <p>Dự án được cấu trúc rõ ràng thành các module tương ứng với từng nhiệm vụ:</p>
+    <pre><code>day_08_rag_pipeline_v2/
+├── README.md                 # Tài liệu hướng dẫn chính của giảng viên
+├── requirements.txt          # Các thư viện python bắt buộc
+├── .env.example              # Khai báo các API Key cần thiết
+├── data/
+│   ├── landing/              # Task 1 &amp; 2: Dữ liệu thô tải về ban đầu
+│   │   ├── legal/            # PDF/DOCX luật ma tuý thô
+│   │   └── news/             # JSON/HTML các bài báo về nghệ sĩ
+│   └── standardized/         # Task 3: File markdown sau khi convert
+│       ├── legal/
+│       └── news/
+├── src/
+│   ├── __init__.py
+│   ├── task1_collect_legal_docs.py   # Thu thập văn bản luật
+│   ├── task2_crawl_news.py           # Crawl tin tức nghệ sĩ
+│   ├── task3_convert_markdown.py     # Chuyển đổi định dạng sang Markdown
+│   ├── task4_chunking_indexing.py     # Phân mảnh văn bản &amp; Nạp vào DB
+│   ├── task5_semantic_search.py      # Tìm kiếm ngữ nghĩa (Dense)
+│   ├── task6_lexical_search.py       # Tìm kiếm từ khóa (BM25)
+│   ├── task7_reranking.py            # Đánh giá lại độ liên quan (Rerank)
+│   ├── task8_pageindex_vectorless.py # Tích hợp PageIndex AI (Fallback)
+│   ├── task9_retrieval_pipeline.py   # Pipeline tìm kiếm tổng hợp
+│   └── task10_generation.py          # LLM trả lời kèm trích dẫn
+├── tests/
+│   └── test_individual.py    # Automated Test Suite chấm điểm cá nhân (50đ)
+└── group_project/
+    └── README.md             # Đề bài &amp; hướng dẫn bài tập nhóm (30đ)</code></pre>
+  </section>
+
+  <!-- Section 3 -->
+  <section class="card" id="pipeline">
+    <h2><span class="num">3</span> Kiến Trúc Retrieval Pipeline Hoàn Chỉnh</h2>
+    <p>Sơ đồ luồng xử lý câu truy vấn của người dùng từ lúc nhập câu hỏi đến khi LLM trả về câu trả lời cuối cùng:</p>
+    
+    <div class="flow">
+      <div class="step">
+        <div class="label">User Query</div>
+        <div class="desc">"Hình phạt tàng trữ trái phép ma tuý?"</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="label">Hybrid Retrieve</div>
+        <div class="desc">Semantic Search + BM25 Lexical Search</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="label">Merge &amp; Rerank</div>
+        <div class="desc">RRF/Score Fusion + Cross-Encoder Reranker</div>
+      </div>
+    </div>
+
+    <div class="flow" style="margin-top: 10px;">
+      <div class="arrow" style="transform: rotate(90deg); margin: 0 0 10px 0;">→</div>
+    </div>
+
+    <div class="flow" style="margin-top: 10px;">
+      <div class="step" style="border-color: var(--warning);">
+        <div class="label">Decision Gate</div>
+        <div class="desc">Top Score &ge; 0.3?</div>
+      </div>
+      <div class="arrow">No ➔</div>
+      <div class="step" style="background: rgba(139, 92, 246, 0.1); border-color: var(--purple);">
+        <div class="label">PageIndex Fallback</div>
+        <div class="desc">Vectorless Retrieval từ PageIndex AI Cloud</div>
+      </div>
+    </div>
+
+    <div class="flow" style="margin-top: 10px;">
+      <div class="arrow" style="transform: rotate(90deg); margin: 0 0 10px 0;">→</div>
+    </div>
+
+    <div class="flow" style="margin-top: 10px;">
+      <div class="step">
+        <div class="label">Context Reordering</div>
+        <div class="desc">Sắp xếp chunks tránh Lost in the middle</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step" style="border-color: var(--success);">
+        <div class="label">LLM Generation</div>
+        <div class="desc">Câu trả lời chính xác có Citation dạng [Luật, 2021]</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 4 -->
+  <section class="card" id="individual">
+    <h2><span class="num">4</span> Chi Tiết 10 Tasks Cá Nhân (50 Điểm)</h2>
+    <p>Mỗi học viên cần tự tay hoàn thành các file mã nguồn từ <code>task1</code> đến <code>task10</code> nằm trong thư mục <code>src/</code>.</p>
+
+    <!-- Task 1 -->
+    <h3>Task 1 — Thu Thập Văn Bản Pháp Luật <span class="pill pill-info">3 điểm</span></h3>
+    <p><strong>Mục tiêu:</strong> Thu thập tài liệu pháp lý định dạng PDF/DOCX liên quan tới ma tuý.</p>
+    <ul class="checklist">
+      <li>Tải tối thiểu <strong>3 văn bản pháp luật</strong> (Luật phòng chống ma tuý, Nghị định 105/2021, Bộ luật Hình sự Chương XX, Nghị định 57/2022...).</li>
+      <li>Lưu file thô vào thư mục: <code>data/landing/legal/</code></li>
+      <li>Đặt tên file rõ ràng, không dấu, không khoảng cách: ví dụ <code>luat-phong-chong-ma-tuy-2021.pdf</code></li>
+      <li>Kích thước mỗi file phải đảm bảo lớn hơn <strong>1KB</strong>.</li>
+    </ul>
+
+    <!-- Task 2 -->
+    <h3>Task 2 — Crawl Bài Báo <span class="pill pill-info">3 điểm</span></h3>
+    <p><strong>Mục tiêu:</strong> Crawl dữ liệu tin tức về các scandal ma tuý của nghệ sĩ.</p>
+    <ul class="checklist">
+      <li>Crawl tối thiểu <strong>5 bài báo</strong> (khuyến nghị dùng thư viện <code>Crawl4AI</code>).</li>
+      <li>Lưu vào thư mục: <code>data/landing/news/</code> dưới định dạng <code>JSON</code>, <code>HTML</code>, hoặc <code>MD</code>.</li>
+      <li>Kích thước mỗi file phải lớn hơn <strong>500 bytes</strong>.</li>
+      <li>Nếu lưu dạng JSON, bắt buộc phải có key <code>"url"</code> chứa link gốc bài báo để phục vụ trích dẫn sau này.</li>
+    </ul>
+
+    <!-- Task 3 -->
+    <h3>Task 3 — Convert Sang Markdown <span class="pill pill-info">4 điểm</span></h3>
+    <p><strong>Mục tiêu:</strong> Chuẩn hóa định dạng toàn bộ tài liệu thô về Markdown để phục vụ chunking chính xác.</p>
+    <ul class="checklist">
+      <li>Sử dụng thư viện <code>markitdown</code> (của Microsoft) để đọc tài liệu trong <code>data/landing/</code> và chuyển đổi.</li>
+      <li>Ghi kết quả vào thư mục: <code>data/standardized/</code> tương ứng (giữ nguyên phân cấp thư mục <code>legal/</code> và <code>news/</code>).</li>
+      <li>Mỗi file kết quả có định dạng <code>.md</code>, dung lượng phải lớn hơn <strong>200 ký tự</strong>.</li>
+    </ul>
+
+    <!-- Task 4 -->
+    <h3>Task 4 — Chunking &amp; Indexing <span class="pill pill-info">7 điểm</span></h3>
+    <p><strong>Mục tiêu:</strong> Phân mảnh các tài liệu markdown và lưu trữ vào Vector Database.</p>
+    <ul class="checklist">
+      <li>Thiết lập cấu hình <code>CHUNK_SIZE</code> và <code>CHUNK_OVERLAP</code> (overlap phải nhỏ hơn chunk size).</li>
+      <li>Sử dụng <code>langchain-text-splitters</code> (ví dụ: <code>RecursiveCharacterTextSplitter</code> hoặc <code>MarkdownHeaderTextSplitter</code>) để cắt text.</li>
+      <li>Đảm bảo các chunk sau khi cắt không vượt quá <code>CHUNK_SIZE * 1.1</code> (ngưỡng dung sai tối đa 10%).</li>
+      <li>Sử dụng mô hình embedding (như <code>sentence-transformers/all-MiniLM-L6-v2</code> hoặc <code>BAAI/bge-m3</code>) để index dữ liệu vào Vector Database (Weaviate được khuyến nghị, hoặc Chroma/FAISS).</li>
+    </ul>
+
+    <!-- Task 5 -->
+    <h3>Task 5 — Semantic Search Module <span class="pill pill-info">6 điểm</span></h3>
+    <p><strong>Mục tiêu:</strong> Triển khai hàm tìm kiếm ngữ nghĩa (Dense Vector Search) trên Vector DB.</p>
+    <p>Yêu cầu hàm <code>semantic_search(query: str, top_k: int = 10) -> list[dict]</code>:</p>
+    <pre><code># Kết quả trả về phải là một list các dict có định dạng:
+[
+    {
+        "content": "Nội dung đoạn văn bản tìm được...",
+        "score": 0.852,  # Điểm tương đồng tương đối (từ cao xuống thấp)
+        "metadata": {"source": "luat-phong-chong-ma-tuy-2021.md", "type": "legal"}
+    },
+    ...
+]</code></pre>
+
+    <!-- Task 6 -->
+    <h3>Task 6 — Lexical Search Module <span class="pill pill-info">6 điểm</span></h3>
+    <p><strong>Mục tiêu:</strong> Triển khai hàm tìm kiếm từ khóa (tần suất xuất hiện từ) sử dụng thuật toán <strong>BM25</strong>.</p>
+    <p>Yêu cầu hàm <code>lexical_search(query: str, top_k: int = 10) -> list[dict]</code>:</p>
+    <ul class="checklist">
+      <li>Sử dụng thư viện <code>rank-bm25</code> hoặc BM25 built-in của Weaviate.</li>
+      <li>Kết quả trả về phải được sắp xếp theo score giảm dần.</li>
+      <li>Nếu có từ khóa trùng khớp trong văn bản, điểm score phải lớn hơn 0 (không chấp nhận điểm toàn bộ bằng 0).</li>
+    </ul>
+
+    <!-- Task 7 -->
+    <h3>Task 7 — Reranking Module <span class="pill pill-info">6 điểm</span></h3>
+    <p><strong>Mục tiêu:</strong> Đánh giá lại độ liên quan để chọn lọc các chunk tốt nhất đưa vào LLM.</p>
+    <p>Yêu cầu hàm <code>rerank(query: str, candidates: list[dict], top_k: int = 5) -> list[dict]</code>:</p>
+    <ul class="checklist">
+      <li>Sử dụng một trong các phương pháp: <strong>Cross-encoder</strong> (ví dụ: mô hình Jina Reranker v2 API hoặc Qwen Reranker local), <strong>MMR</strong> (Maximal Marginal Relevance) tự triển khai, hoặc <strong>RRF</strong> (Reciprocal Rank Fusion).</li>
+      <li>Kết quả sau khi rerank phải trả về đúng số lượng <code>top_k</code>, được cập nhật giá trị <code>"score"</code> mới và sắp xếp giảm dần.</li>
+    </ul>
+
+    <!-- Task 8 -->
+    <h3>Task 8 — PageIndex Vectorless RAG <span class="pill pill-info">4 điểm</span></h3>
+    <p><strong>Mục tiêu:</strong> Thiết lập cơ chế fallback tìm kiếm không cần vector DB nội bộ thông qua dịch vụ đám mây PageIndex.</p>
+    <p>Yêu cầu hàm <code>pageindex_search(query: str, top_k: int = 5) -> list[dict]</code>:</p>
+    <ul class="checklist">
+      <li>Đăng ký tài khoản trên <a href="https://pageindex.ai/" target="_blank" style="color: var(--accent);">pageindex.ai</a>, lấy API Key và upload tài liệu.</li>
+      <li>Sử dụng SDK <code>pageindex</code> để thực hiện tìm kiếm.</li>
+      <li>Kết quả trả về từ hàm này bắt buộc phải có thuộc tính <code>"source": "pageindex"</code> trong phần metadata để test suite nhận diện.</li>
+    </ul>
+
+    <!-- Task 9 -->
+    <h3>Task 9 — Retrieval Pipeline Hoàn Chỉnh <span class="pill pill-info">7 điểm</span></h3>
+    <p><strong>Mục tiêu:</strong> Tích hợp tất cả các module tìm kiếm đơn lẻ thành một pipeline thống nhất có cơ chế kiểm tra điểm ngưỡng (threshold fallback).</p>
+    <p>Yêu cầu hàm <code>retrieve(query: str, top_k: int = 5, score_threshold: float = 0.3) -> list[dict]</code>:</p>
+    <pre><code>1. Chạy song song/nối tiếp: semantic_search + lexical_search.
+2. Hợp nhất (Merge) kết quả và tiến hành Rerank (Task 7).
+3. Kiểm tra kết quả có score cao nhất:
+   - Nếu score &ge; score_threshold: Trả về kết quả Hybrid (đánh dấu source="hybrid").
+   - Nếu score &lt; score_threshold: Gọi pageindex_search (đánh dấu source="pageindex").
+4. Đảm bảo kết quả trả về không vượt quá top_k và không crash nếu một trong các luồng bị trống.</code></pre>
+
+    <!-- Task 10 -->
+    <h3>Task 10 — Generation Có Citation <span class="pill pill-info">4 điểm</span></h3>
+    <p><strong>Mục tiêu:</strong> Lắp ráp dữ liệu context, xử lý tối ưu vị trí context và gửi prompt tới LLM để sinh câu trả lời có nguồn trích dẫn.</p>
+    <ul class="checklist">
+      <li>Triển khai hàm <code>reorder_for_llm(chunks: list[dict]) -> list[dict]</code>: Sắp xếp các chunk tìm được theo quy luật <em>Lost in the middle</em> (đưa chunk quan trọng nhất lên đầu và cuối danh sách, chunk ít quan trọng hơn nằm ở giữa prompt).</li>
+      <li>Triển khai hàm <code>format_context(chunks: list[dict]) -> str</code>: Ghép các chunk lại kèm theo thông tin metadata nguồn.</li>
+      <li>Triển khai hàm <code>generate_with_citation(query: str) -> dict</code>: Trả về dict chứa key <code>"answer"</code> (câu trả lời của LLM). Câu trả lời phải sử dụng thông tin từ context và chèn trích dẫn dạng <code>[Tên văn bản, Năm]</code> ngay sau câu khẳng định. Nếu context không có đủ thông tin, LLM bắt buộc phải trả về: <code>"I cannot verify this information"</code>.</li>
+    </ul>
+  </section>
+
+  <!-- Section 5 -->
+  <section class="card" id="group">
+    <h2><span class="num">5</span> Yêu Cầu Bài Tập Nhóm (30 Điểm)</h2>
+    <p>
+      Sau khi các thành viên hoàn thành bài tập cá nhân, cả nhóm sẽ ngồi lại tích hợp code để xây dựng <strong>1 trong 2 sản phẩm</strong> dưới đây:
+    </p>
+
+    <div class="grid-2">
+      <!-- Option 1 -->
+      <div class="mini-card" style="border-top: 3px solid var(--accent);">
+        <span class="pill pill-info" style="margin-bottom: 12px;">Lựa Chọn 1</span>
+        <h4 style="margin: 8px 0; font-size: 1.15rem;">Sản Phẩm RAG Chatbot</h4>
+        <p style="font-size: 0.95rem; margin-bottom: 12px; line-height: 1.6;">
+          Xây dựng một chatbot trực quan để tra cứu pháp luật ma tuý và tin tức liên quan.
+        </p>
+        <ul style="padding-left: 20px; font-size: 0.88rem; color: var(--text-muted); margin: 0 0 16px 0;">
+          <li>Giao diện chat thân thiện (dùng <strong>Streamlit</strong>, <strong>Gradio</strong>, hoặc <strong>Chainlit</strong>).</li>
+          <li>Có hiển thị câu trả lời kèm citation (Task 10).</li>
+          <li>Hỗ trợ bộ nhớ cuộc hội thoại để hỏi các câu follow-up (Conversation Memory).</li>
+          <li>Có khu vực hiển thị danh sách các tài liệu nguồn (Source Documents) đã dùng để trả lời.</li>
+        </ul>
+      </div>
+
+      <!-- Option 2 -->
+      <div class="mini-card" style="border-top: 3px solid var(--purple);">
+        <span class="pill pill-purple" style="margin-bottom: 12px;">Lựa Chọn 2</span>
+        <h4 style="margin: 8px 0; font-size: 1.15rem;">RAG Evaluation Pipeline</h4>
+        <p style="font-size: 0.95rem; margin-bottom: 12px; line-height: 1.6;">
+          Xây dựng pipeline đánh giá chất lượng hệ thống RAG sử dụng các framework chuyên dụng.
+        </p>
+        <ul style="padding-left: 20px; font-size: 0.88rem; color: var(--text-muted); margin: 0 0 16px 0;">
+          <li>Sử dụng <strong>DeepEval</strong>, <strong>RAGAS</strong>, hoặc <strong>TruLens</strong>.</li>
+          <li>Xây dựng bộ dữ liệu kiểm thử (Golden Dataset) gồm ít nhất <strong>15 cặp Q&amp;A</strong>.</li>
+          <li>Đo lường ít nhất 4 chỉ số cốt lõi: <em>Faithfulness</em>, <em>Answer Relevance</em>, <em>Context Recall</em>, và <em>Context Precision</em>.</li>
+          <li>Thực hiện đánh giá so sánh A/B giữa 2 cấu hình RAG khác nhau và viết báo cáo phân tích.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Yêu Cầu Chung Cho Bài Nhóm:</h3>
+    <ul class="checklist">
+      <li>Phải tích hợp được mã nguồn từ bài cá nhân của các thành viên.</li>
+      <li>Mã nguồn phải được push lên repository chung của nhóm.</li>
+      <li>Có file <code>group_project/README.md</code> mô tả kiến trúc hệ thống, hướng dẫn chạy và bảng phân công công việc cụ thể cho từng thành viên.</li>
+    </ul>
+  </section>
+
+  <!-- Section 6 -->
+  <section class="card" id="grading">
+    <h2><span class="num">6</span> Phân Bổ Điểm &amp; Cách Test</h2>
+    <p>Điểm số môn học được chia làm 3 phần như sau:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Thành phần</th>
+          <th>Tỷ trọng</th>
+          <th>Chi tiết</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Bài Cá Nhân</strong></td>
+          <td><strong>50% (50đ)</strong></td>
+          <td>Chấm điểm tự động bằng Test Suite (mỗi task đạt yêu cầu sẽ được điểm tối đa).</td>
+        </tr>
+        <tr>
+          <td><strong>Bài Nhóm</strong></td>
+          <td><strong>30% (30đ)</strong></td>
+          <td>Đánh giá qua buổi demo, chất lượng code tích hợp, cấu trúc README và báo cáo/chatbot.</td>
+        </tr>
+        <tr>
+          <td><strong>Điểm Cộng (Bonus)</strong></td>
+          <td><strong>20% (20đ)</strong></td>
+          <td>Các tính năng nâng cao hoặc chuẩn bị được câu hỏi hóc búa làm khó được AI.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Chi Tiết Điểm Bài Cá Nhân (50 Điểm)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Nội dung yêu cầu</th>
+          <th>Điểm</th>
+          <th>Hàm kiểm thử tương ứng (pytest)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Task 1</strong></td>
+          <td>Thu thập &ge;3 file văn bản luật trong <code>data/landing/legal/</code></td>
+          <td>3đ</td>
+          <td><code>TestTask1</code> (<code>test_landing_legal_dir_exists</code>, <code>test_minimum_3_legal_files</code>...)</td>
+        </tr>
+        <tr>
+          <td><strong>Task 2</strong></td>
+          <td>Crawl &ge;5 bài báo lưu trong <code>data/landing/news/</code></td>
+          <td>3đ</td>
+          <td><code>TestTask2</code> (<code>test_landing_news_dir_exists</code>, <code>test_minimum_5_news_files</code>...)</td>
+        </tr>
+        <tr>
+          <td><strong>Task 3</strong></td>
+          <td>Convert tài liệu sang Markdown trong <code>data/standardized/</code></td>
+          <td>4đ</td>
+          <td><code>TestTask3</code> (<code>test_standardized_dir_exists</code>, <code>test_has_markdown_files</code>...)</td>
+        </tr>
+        <tr>
+          <td><strong>Task 4</strong></td>
+          <td>Phân đoạn (Chunking) &amp; nạp vector database thành công</td>
+          <td>7đ</td>
+          <td><code>TestTask4</code> (<code>test_config_documented</code>, <code>test_chunk_documents_produces_chunks</code>...)</td>
+        </tr>
+        <tr>
+          <td><strong>Task 5</strong></td>
+          <td>Hàm <code>semantic_search</code> hoạt động, trả về danh sách có score giảm dần</td>
+          <td>6đ</td>
+          <td><code>TestTask5</code> (<code>test_results_have_required_keys</code>, <code>test_results_sorted_descending</code>...)</td>
+        </tr>
+        <tr>
+          <td><strong>Task 6</strong></td>
+          <td>Hàm <code>lexical_search</code> (BM25) trả về kết quả đúng định dạng</td>
+          <td>6đ</td>
+          <td><code>TestTask6</code> (<code>test_results_have_required_keys</code>, <code>test_keyword_match_scores_higher</code>...)</td>
+        </tr>
+        <tr>
+          <td><strong>Task 7</strong></td>
+          <td>Hàm <code>rerank</code> hoạt động chính xác, sắp xếp lại độ ưu tiên các chunk</td>
+          <td>6đ</td>
+          <td><code>TestTask7</code> (<code>test_rerank_returns_list</code>, <code>test_rerank_respects_top_k</code>, <code>test_rerank_has_score</code>)</td>
+        </tr>
+        <tr>
+          <td><strong>Task 8</strong></td>
+          <td>Hàm <code>pageindex_search</code> trả về kết quả từ PageIndex AI Cloud</td>
+          <td>4đ</td>
+          <td><code>TestTask8</code> (<code>test_function_exists</code>, <code>test_returns_list_with_source_marker</code>)</td>
+        </tr>
+        <tr>
+          <td><strong>Task 9</strong></td>
+          <td>Hàm <code>retrieve</code> kết hợp hybrid search và fallback PageIndex</td>
+          <td>7đ</td>
+          <td><code>TestTask9</code> (<code>test_retrieve_returns_list</code>, <code>test_results_have_required_keys</code>, <code>test_fallback_logic_exists</code>)</td>
+        </tr>
+        <tr>
+          <td><strong>Task 10</strong></td>
+          <td>Sinh câu trả lời có trích dẫn nguồn (citation) &amp; reorder chunk</td>
+          <td>4đ</td>
+          <td><code>TestTask10</code> (<code>test_reorder_function_exists</code>, <code>test_format_context_includes_source</code>, <code>test_generate_returns_dict_with_answer</code>)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout warning">
+      <h5>Lưu Ý Cực Kỳ Quan Trọng</h5>
+      <p>
+        Hệ thống chấm điểm sử dụng framework <code>unittest</code> chạy thông qua <code>pytest</code>. Trước khi nộp bài, hãy chạy lệnh sau để kiểm tra điểm số cá nhân:<br>
+        <code>pytest tests/ -v</code> hoặc chạy từng phần riêng: <code>pytest tests/test_individual.py::TestTask5 -v</code>.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section 7 -->
+  <section class="card" id="timeline">
+    <h2><span class="num">7</span> Timeline Gợi Ý &amp; Tài Liệu Tham Khảo</h2>
+    <p>Để hoàn thành bài tập Ngày 8 một cách tối ưu, học viên có thể phân bổ thời gian như sau:</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Giai đoạn</th>
+          <th>Thời gian gợi ý</th>
+          <th>Mục tiêu hoạt động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Giai đoạn 1 (Task 1–3)</strong></td>
+          <td>45 phút đầu (0:00 – 0:45)</td>
+          <td>Thu thập đủ 3 file luật, crawl 5 bài báo và viết script chuyển đổi sang Markdown bằng MarkItDown.</td>
+        </tr>
+        <tr>
+          <td><strong>Giai đoạn 2 (Task 4–6)</strong></td>
+          <td>60 phút tiếp theo (0:45 – 1:45)</td>
+          <td>Triển khai phân mảnh text, cài đặt và cấu hình Weaviate Vector Store, viết hàm Semantic Search và BM25 Lexical Search.</td>
+        </tr>
+        <tr>
+          <td><strong>Giai đoạn 3 (Task 7–8)</strong></td>
+          <td>30 phút tiếp theo (1:45 – 2:15)</td>
+          <td>Thiết lập Cross-encoder Reranker (hoặc MMR) và liên kết tài khoản PageIndex AI để hoàn thiện module Fallback.</td>
+        </tr>
+        <tr>
+          <td><strong>Giai đoạn 4 (Task 9–10)</strong></td>
+          <td>45 phút cuối (2:15 – 3:00)</td>
+          <td>Tích hợp thành Retrieval Pipeline hoàn chỉnh với logic fallback và lập trình prompt sinh câu trả lời kèm citation (Lost in the middle).</td>
+        </tr>
+        <tr>
+          <td><strong>Bài Tập Nhóm</strong></td>
+          <td>Tự học / Ngoài giờ</td>
+          <td>Tích hợp code của các thành viên, xây dựng chatbot UI hoặc RAG Evaluation report. Chuẩn bị slide trình bày.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Tài liệu tham khảo &amp; Thư viện sử dụng:</h3>
+    <ul class="checklist">
+      <li><a href="https://github.com/unclecode/crawl4ai" target="_blank">Crawl4AI GitHub</a> — Thư viện crawl dữ liệu web tối ưu cho AI.</li>
+      <li><a href="https://github.com/microsoft/markitdown" target="_blank">MarkItDown GitHub</a> — Công cụ convert đa định dạng (PDF/DOCX) sang Markdown của Microsoft.</li>
+      <li><a href="https://python.langchain.com/docs/modules/data_connection/document_transformers/" target="_blank">LangChain Text Splitters</a> — Tài liệu hướng dẫn phân mảnh văn bản.</li>
+      <li><a href="https://weaviate.io/developers/weaviate" target="_blank">Weaviate Documentation</a> — Hướng dẫn cài đặt và sử dụng cơ sở dữ liệu vector Weaviate.</li>
+      <li><a href="https://github.com/dorianbrown/rank_bm25" target="_blank">rank-bm25 GitHub</a> — Thuật toán tìm kiếm từ khóa BM25 viết bằng python.</li>
+      <li><a href="https://github.com/VectifyAI/PageIndex" target="_blank">PageIndex Python SDK</a> — Thư viện kết nối với dịch vụ Vectorless RAG.</li>
+      <li><a href="https://jina.ai/reranker/" target="_blank">Jina Reranker API</a> — API chấm điểm mức độ liên quan đa ngôn ngữ.</li>
+      <li>Liu et al. (2023), <em>Lost in the Middle: How Language Models Use Long Contexts</em> (Tài liệu nghiên cứu khoa học).</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Bản quyền tài liệu thuộc về khóa học AI20K Build Cohort 2. Được biên soạn &amp; định dạng làm rõ bởi Antigravity AI.</p>
+  </footer>
+
+</div>
+</body>
+</html>
